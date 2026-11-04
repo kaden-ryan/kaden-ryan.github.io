@@ -477,10 +477,11 @@
       <p class="eyebrow">Contact</p>
       <h2 class="contact-lede">Let's build something.</h2>
       <p class="contact-sub">Have a project, a question, or an opportunity? Send a note and I'll get back to you.</p>
-      <form class="form" id="contact-form" action="https://formsubmit.co/kadenryan100@gmail.com" method="POST">
-        <input type="hidden" name="_subject" value="Portfolio website contact: new message">
-        <input type="hidden" name="_template" value="table">
-        <input type="hidden" name="_captcha" value="false">
+      <form class="form" id="contact-form" action="https://api.web3forms.com/submit" method="POST">
+        <input type="hidden" name="access_key" value="13051510-5b69-4dd2-9605-381cd0fd03aa">
+        <input type="hidden" name="subject" value="Portfolio website contact: new message">
+        <input type="hidden" name="from_name" value="kadenryan.com">
+        <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
         <input type="text" name="name" placeholder="Your name" autocomplete="name" required>
         <input type="email" name="email" placeholder="Email address" autocomplete="email" required>
         <textarea name="message" placeholder="What's on your mind?" required></textarea>
@@ -494,13 +495,19 @@
             e.preventDefault();
             btn.disabled = true;
             btn.textContent = 'Sending…';
-            fetch('https://formsubmit.co/ajax/kadenryan100@gmail.com', {
+            // Give up after 15s so the button never hangs on "Sending…"
+            var ctrl = new AbortController();
+            var timer = setTimeout(function () { ctrl.abort(); }, 15000);
+            fetch('https://api.web3forms.com/submit', {
               method: 'POST',
               headers: { 'Accept': 'application/json' },
-              body: new FormData(form)
+              body: new FormData(form),
+              signal: ctrl.signal
             })
-              .then(function (res) {
-                if (!res.ok) throw new Error('send failed');
+              .then(function (res) { return res.json(); })
+              .then(function (data) {
+                clearTimeout(timer);
+                if (!data.success) throw new Error('send failed');
                 form.reset();
                 btn.textContent = '✓ Message sent';
                 setTimeout(function () {
@@ -509,6 +516,7 @@
                 }, 5000);
               })
               .catch(function () {
+                clearTimeout(timer);
                 btn.textContent = 'Something went wrong. Try again';
                 btn.disabled = false;
               });
